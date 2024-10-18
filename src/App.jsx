@@ -1,4 +1,5 @@
 import { render } from 'solid-js/web';
+import { createSignal } from 'solid-js';
 import createCrossBrowserPanelManager from './CrossBrowserPanelManager';
 
 const App = () => {
@@ -17,9 +18,9 @@ const App = () => {
     }
   };
 
-  const { createPanel, togglePanelMode, PanelManager } = createCrossBrowserPanelManager({
+  const { createPanel, togglePanelMode, setSnapGrid, gridConfig, PanelManager } = createCrossBrowserPanelManager({
     renderContent,
-    gridSize: 20 // Set the grid size to 20px
+    gridSize: 20 // Set the initial grid size to 20px
   });
 
   const createCustomPanel = (type, x, y) => {
@@ -44,6 +45,30 @@ const App = () => {
     );
   };
 
+  const [gridType, setGridType] = createSignal(gridConfig().type);
+  const [gridSize, setGridSize] = createSignal(gridConfig().size);
+
+  const updateGridConfig = () => {
+    setSnapGrid({
+      type: gridType(),
+      size: Number(gridSize()),
+    });
+  };
+
+  const toggleSnapGrid = () => {
+    setSnapGrid({ enabled: !gridConfig().enabled });
+  };
+
+  const buttonStyle = (active) => ({
+    padding: '5px 10px',
+    margin: '0 5px',
+    backgroundColor: active ? '#4CAF50' : '#f44336',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  });
+
   return (
     <div>
       <h1>Panel Management</h1>
@@ -53,6 +78,39 @@ const App = () => {
       <button onClick={() => createCustomPanel('relative', window.screenX + 200, window.screenY + 200)}>
         Create Relative Panel
       </button>
+      <div style={{ marginTop: '20px' }}>
+        <label>
+          Grid Type:
+          <select 
+            value={gridType()} 
+            onChange={(e) => {
+              setGridType(e.target.value);
+              updateGridConfig();
+            }}
+          >
+            <option value="pixel">Pixel</option>
+            <option value="percentage">Percentage</option>
+          </select>
+        </label>
+        <label style={{ marginLeft: '10px' }}>
+          Grid Size:
+          <input 
+            type="number" 
+            value={gridSize()} 
+            onInput={(e) => {
+              setGridSize(e.target.value);
+              updateGridConfig();
+            }} 
+            style={{ width: '50px' }} 
+          />
+        </label>
+        <button 
+          onClick={toggleSnapGrid} 
+          style={buttonStyle(gridConfig().enabled)}
+        >
+          Snap Grid: {gridConfig().enabled ? 'ON' : 'OFF'}
+        </button>
+      </div>
       <PanelManager />
     </div>
   );

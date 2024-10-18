@@ -8,9 +8,23 @@ const createCrossBrowserPanelManager = (options = {}) => {
   const channel = new BroadcastChannel('panel-management');
   const browserId = Date.now() + Math.random();
 
-  const gridSize = options.gridSize || 20; // Default grid size of 20px
+  const [gridConfig, setGridConfig] = createSignal({
+    enabled: true,
+    type: 'pixel',
+    size: options.gridSize || 20
+  });
 
-  const snapToGrid = (value) => Math.round(value / gridSize) * gridSize;
+  const snapToGrid = (value) => {
+    if (!gridConfig().enabled) return value;
+    const size = gridConfig().size;
+    if (gridConfig().type === 'pixel') {
+      return Math.round(value / size) * size;
+    } else if (gridConfig().type === 'percentage') {
+      const percentValue = (value / window.innerWidth) * 100;
+      return (Math.round(percentValue / size) * size / 100) * window.innerWidth;
+    }
+    return value;
+  };
 
   const createPanel = (type, x, y, width = 200, height = 150, contentId, styles = {}) => {
     const newPanel = { 
@@ -98,7 +112,7 @@ const createCrossBrowserPanelManager = (options = {}) => {
       if (!isResizing()) return;
       const newWidth = startWidth + e.clientX - startX;
       const newHeight = startHeight + e.clientY - startY;
-      updatePanelSize(props.id, Math.max(gridSize, newWidth), Math.max(gridSize, newHeight));
+      updatePanelSize(props.id, Math.max(gridConfig().size, newWidth), Math.max(gridConfig().size, newHeight));
     };
 
     const handleResizeEnd = () => {
@@ -200,9 +214,15 @@ const createCrossBrowserPanelManager = (options = {}) => {
     };
   });
 
+  const setSnapGrid = (config) => {
+    setGridConfig(prevConfig => ({ ...prevConfig, ...config }));
+  };
+
   return {
     createPanel,
     togglePanelMode,
+    setSnapGrid,
+    gridConfig,
     PanelManager: () => (
       <For each={panels}>{(panel) => <Panel {...panel} />}</For>
     )
