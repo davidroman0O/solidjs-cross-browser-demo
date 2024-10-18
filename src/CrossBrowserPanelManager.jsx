@@ -11,29 +11,42 @@ const createCrossBrowserPanelManager = (options = {}) => {
   const [gridConfig, setGridConfig] = createSignal({
     enabled: true,
     type: 'pixel',
-    size: options.gridSize || 20
+    size: options.gridSize || 20,
+    mode: 'local' // 'local' or 'shared'
   });
 
-  const snapToGrid = (value) => {
+  const snapToGrid = (value, isX = true) => {
     if (!gridConfig().enabled) return value;
-    const size = gridConfig().size;
-    if (gridConfig().type === 'pixel') {
-      return Math.round(value / size) * size;
-    } else if (gridConfig().type === 'percentage') {
-      const percentValue = (value / window.innerWidth) * 100;
-      return (Math.round(percentValue / size) * size / 100) * window.innerWidth;
+    const { size, type, mode } = gridConfig();
+    let snappedValue;
+
+    if (type === 'pixel') {
+      if (mode === 'local') {
+        // For local mode, we snap based on the browser window position
+        const offset = isX ? browserPosition().x : browserPosition().y;
+        snappedValue = Math.round((value - offset) / size) * size + offset;
+      } else {
+        // For shared mode, we snap based on the screen coordinates
+        snappedValue = Math.round(value / size) * size;
+      }
+    } else if (type === 'percentage') {
+      const viewportSize = isX ? window.innerWidth : window.innerHeight;
+      const percentValue = (value / viewportSize) * 100;
+      const snappedPercent = Math.round(percentValue / size) * size;
+      snappedValue = (snappedPercent / 100) * viewportSize;
     }
-    return value;
+
+    return snappedValue;
   };
 
   const createPanel = (type, x, y, width = 200, height = 150, contentId, styles = {}) => {
     const newPanel = { 
       id: Date.now() + Math.random(),
       type,
-      x: snapToGrid(x),
-      y: snapToGrid(y),
-      width: snapToGrid(width),
-      height: snapToGrid(height),
+      x: snapToGrid(x, true),
+      y: snapToGrid(y, false),
+      width: snapToGrid(width, true),
+      height: snapToGrid(height, false),
       contentId,
       styles: JSON.stringify(styles)
     };
@@ -46,15 +59,15 @@ const createCrossBrowserPanelManager = (options = {}) => {
   };
 
   const updatePanelPosition = (id, x, y) => {
-    const snappedX = snapToGrid(x);
-    const snappedY = snapToGrid(y);
+    const snappedX = snapToGrid(x, true);
+    const snappedY = snapToGrid(y, false);
     setPanels(panel => panel.id === id, { x: snappedX, y: snappedY });
     channel.postMessage({ action: 'update', panel: { id, x: snappedX, y: snappedY }, sender: browserId });
   };
 
   const updatePanelSize = (id, width, height) => {
-    const snappedWidth = snapToGrid(width);
-    const snappedHeight = snapToGrid(height);
+    const snappedWidth = snapToGrid(width, true);
+    const snappedHeight = snapToGrid(height, false);
     setPanels(panel => panel.id === id, { width: snappedWidth, height: snappedHeight });
     channel.postMessage({ action: 'resize', panel: { id, width: snappedWidth, height: snappedHeight }, sender: browserId });
   };

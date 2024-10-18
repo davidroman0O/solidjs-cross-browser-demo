@@ -47,16 +47,19 @@ const App = () => {
 
   const [gridType, setGridType] = createSignal(gridConfig().type);
   const [gridSize, setGridSize] = createSignal(gridConfig().size);
+  const [gridMode, setGridMode] = createSignal(gridConfig().mode);
 
   createEffect(() => {
     setGridType(gridConfig().type);
     setGridSize(gridConfig().size);
+    setGridMode(gridConfig().mode);
   });
 
   const updateGridConfig = () => {
     setSnapGrid({
       type: gridType(),
       size: Number(gridSize()),
+      mode: gridMode()
     });
   };
 
@@ -108,6 +111,19 @@ const App = () => {
             }} 
             style={{ width: '50px' }} 
           />
+        </label>
+        <label style={{ marginLeft: '10px' }}>
+          Grid Mode:
+          <select 
+            value={gridMode()} 
+            onChange={(e) => {
+              setGridMode(e.target.value);
+              updateGridConfig();
+            }}
+          >
+            <option value="local">Local</option>
+            <option value="shared">Shared</option>
+          </select>
         </label>
         <button 
           onClick={toggleSnapGrid} 
