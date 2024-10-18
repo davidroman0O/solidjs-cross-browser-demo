@@ -1,5 +1,5 @@
 import { render } from 'solid-js/web';
-import { createSignal } from 'solid-js';
+import { createSignal, createEffect } from 'solid-js';
 import createCrossBrowserPanelManager from './CrossBrowserPanelManager';
 
 const App = () => {
@@ -47,6 +47,11 @@ const App = () => {
 
   const [gridType, setGridType] = createSignal(gridConfig().type);
   const [gridSize, setGridSize] = createSignal(gridConfig().size);
+
+  createEffect(() => {
+    setGridType(gridConfig().type);
+    setGridSize(gridConfig().size);
+  });
 
   const updateGridConfig = () => {
     setSnapGrid({

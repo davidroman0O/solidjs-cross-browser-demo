@@ -194,7 +194,7 @@ const createCrossBrowserPanelManager = (options = {}) => {
 
   createEffect(() => {
     const handleMessage = (event) => {
-      const { action, panel, sender } = event.data;
+      const { action, panel, sender, gridConfig: receivedGridConfig } = event.data;
       if (sender === browserId) return; // Ignore messages from self
 
       if (action === 'create') {
@@ -203,6 +203,8 @@ const createCrossBrowserPanelManager = (options = {}) => {
         setPanels(p => p.id === panel.id, panel);
       } else if (action === 'resize') {
         setPanels(p => p.id === panel.id, { width: panel.width, height: panel.height });
+      } else if (action === 'gridConfig') {
+        setGridConfig(receivedGridConfig);
       }
     };
 
@@ -215,7 +217,13 @@ const createCrossBrowserPanelManager = (options = {}) => {
   });
 
   const setSnapGrid = (config) => {
-    setGridConfig(prevConfig => ({ ...prevConfig, ...config }));
+    const newConfig = { ...gridConfig(), ...config };
+    setGridConfig(newConfig);
+    channel.postMessage({
+      action: 'gridConfig',
+      gridConfig: newConfig,
+      sender: browserId
+    });
   };
 
   return {
