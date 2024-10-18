@@ -22,7 +22,7 @@ const createCrossBrowserPanelManager = (options = {}) => {
 
     if (type === 'pixel') {
       if (mode === 'local') {
-        // For local mode, we snap based on the browser window position
+        // For local mode, we snap based on the current browser window position
         const offset = isX ? browserPosition().x : browserPosition().y;
         snappedValue = Math.round((value - offset) / size) * size + offset;
       } else {
@@ -34,6 +34,11 @@ const createCrossBrowserPanelManager = (options = {}) => {
       const percentValue = (value / viewportSize) * 100;
       const snappedPercent = Math.round(percentValue / size) * size;
       snappedValue = (snappedPercent / 100) * viewportSize;
+
+      if (mode === 'local') {
+        const offset = isX ? browserPosition().x : browserPosition().y;
+        snappedValue += offset;
+      }
     }
 
     return snappedValue;
